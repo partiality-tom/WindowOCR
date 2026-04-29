@@ -44,7 +44,7 @@ MainWindow::MainWindow(QWidget *parent)
     qDebug()<<"初始化完成！";
 
     m_future=QtConcurrent::run([this](){
-        qDebug() << "✅ 截图OCR线程启动";
+        qDebug() << "OCR线程启动";
         while(!m_threadExit)
         {
             {
@@ -92,14 +92,13 @@ MainWindow::MainWindow(QWidget *parent)
 
             QStringList resultList;
 
-            for (const auto& line : res) {
+            for (const auto& line : res)
+            {
                 QString lineStr;
-
                 // 遍历当前的 vector<string>，把里面的每个 string 拼接到一起
                 for (const auto& str : line) {
                     lineStr += QString::fromStdString(str);
                 }
-
                 // 存入列表
                 resultList << lineStr;
             }
@@ -179,8 +178,9 @@ void MainWindow::on_btn_dealCards_clicked()
         connect(ui->textEdit,&QTextEdit::textChanged,this,[this](){
             QString new_string=ui->textEdit->toPlainText();
             qDebug()<<"识别区最新文本:"<<new_string;
-            QStringList list = new_string.split(" ", Qt::SkipEmptyParts);
-            //emit SendText(list);
+            new_string.remove('\n');
+            QStringList list = new_string.split("，", Qt::SkipEmptyParts);
+            emit SendText(list);
         });
         connect(this,&MainWindow::SendText,m_CardsScreen,&CardsScreen::Automaticdealing);
     }

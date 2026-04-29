@@ -6,15 +6,11 @@
 
 // 一张牌的结构
 struct Card {
-    QString color;  // 花色：Spade(黑桃) Heart(红桃) Club(梅花) Diamond(方块)
-    QString value;  // 3~10 J Q K A 2 小王 大王
-    int weight;      // 权值（用于排序），目前没使用到
+    QString color;  // 花色，也可充当点数和花色（例如红2）
+    QString value;  // 点数
+    int weight;     // 权值（用于排序），目前没使用到
 };
 
-struct StrCard
-{
-    QString card; //一张牌,适配成员
-};
 
 namespace Ui {
 class CardsScreen;
@@ -29,6 +25,7 @@ public:
     ~CardsScreen();
 
     void Automaticdealing(QStringList cards);  //识别到文字后自动发牌
+    void Handledeal();  //发牌逻辑
 private slots:
     void on_btn_dealCards_clicked();
 
@@ -37,10 +34,14 @@ private:
     Ui::CardsScreen *ui;
 
     std::vector<Card> m_allCards;       // 所有54张牌
-    std::vector<Card> m_player1Cards;   // 玩家1（地主）20张
-    std::vector<Card> m_player2Cards;   // 玩家2（农民）17张
-    std::vector<Card> m_player3Cards;   // 玩家3（农民）17张
-    std::vector<Card> m_bottomCards;    // 底牌3张
+    std::vector<Card> m_player1Cards;   // 玩家1
+    std::vector<Card> m_player2Cards;   // 玩家2
+    std::vector<Card> m_player3Cards;   // 玩家3
+    std::vector<Card> m_player4Cards;   // 玩家4
+    std::vector<Card> m_player5Cards;   // 玩家5
+    std::vector<Card> m_player6Cards;   // 玩家6
+
+
 
     void createAllCards();  //生成所有的牌
     void shuffleCards(); //洗牌

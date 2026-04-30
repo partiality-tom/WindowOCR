@@ -28,3 +28,6 @@ void CardLabel::mousePressEvent(QMouseEvent *ev)
     emit cardClicked(this);
     QLabel::mousePressEvent(ev);
 }
+
+
+

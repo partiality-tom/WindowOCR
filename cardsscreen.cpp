@@ -20,6 +20,8 @@ CardsScreen::~CardsScreen()
 
 void CardsScreen::on_btn_dealCards_clicked()
 {
+
+/*
     //createAllCards();   // 生成牌
     //shuffleCards();     // 洗牌
     dealCards();        // 发牌
@@ -29,6 +31,10 @@ void CardsScreen::on_btn_dealCards_clicked()
     showCards(ui->groupBox_42, m_player2Cards); // 农民
     showCards(ui->groupBox_43, m_player3Cards); // 农民
     showCards(ui->groupBox_44, m_player4Cards);   // 底牌
+*/
+
+    Handledeal();
+
 }
 
 void CardsScreen::Automaticdealing(QStringList cards)
@@ -36,17 +42,17 @@ void CardsScreen::Automaticdealing(QStringList cards)
 
 
     m_allCards.clear();
-
+    qDebug()<<"AAA:";
     //遍历牌识别到的牌，生成Card
     for (const QString& card : cards) {
-        //qDebug()<<card;
+        qDebug()<<card;
         m_allCards.push_back({card});
     }
 
     //识别到牌后显示
     showCards(ui->AllCards, m_allCards);
 
-    Handledeal(); //发牌
+    //Handledeal(); //发牌
     //洗牌逻辑，忽略，可参考 shuffleCards();
 
     //发牌逻辑，一个玩家顺序发三张(只做示例)
@@ -62,6 +68,10 @@ void CardsScreen::Automaticdealing(QStringList cards)
 
 }
 
+
+
+//测试到4人发牌没问题
+//     红A，黑A，黑2，黑3，黑4，黑5，黑6，黑7，黑8，黑9，黑10，黑K，黑Q，红2，红3，红4
 void CardsScreen::Handledeal()
 {
 
@@ -74,38 +84,68 @@ void CardsScreen::Handledeal()
         targetCard=targetCardValue;
     }
     targetCard=targetCardSuit+targetCardValue;
+    qDebug()<<"targetCard"<<targetCard;
 
 
-    // 2. 遍历所有牌，找到目标牌的位置
-    int startIndex = -1;
+    //清除之前的所有牌
+    m_player1Cards.clear();
+    m_player2Cards.clear();
+    m_player3Cards.clear();
+    m_player4Cards.clear();
+    m_player5Cards.clear();
+    m_player6Cards.clear();
+
+    //遍历所有牌，找到目标牌的位置
+    int targetIndex = -1;
     for (int i = 0; i < m_allCards.size(); ++i) {
         if (m_allCards[i].color == targetCard) {
-            startIndex = i;
-
+            targetIndex = i;
+            qDebug()<<"m_allCards"<<m_allCards[i].color;
             break; // 找到第一张匹配的就退出
         }
     }
-    qDebug()<<"startIndex:"<<startIndex;
-
-
-    // 如果没有找到目标牌，或者剩下的牌不够发（比如找到的是倒数第2张，后面根本不够跳过4张再发牌），直接返回
-    if (startIndex == -1 || startIndex + 4 >= m_allCards.size()) {
+    if(targetIndex==-1)
+    {
+        qDebug()<<"没有目标牌";
         return;
     }
 
-    //删除参数牌之前的牌，以及后续三张，留下需要发的牌
-    m_allCards.erase(m_allCards.begin(), m_allCards.begin() + startIndex+4); //erase删除不含尾
+    qDebug()<<"targetIndex:"<<targetIndex;
+
+    //删除参数牌之前的牌，留下需要发的牌
+    m_allCards.erase(m_allCards.begin(), m_allCards.begin() + targetIndex); //erase删除不含尾
+
+    int personNum=ui->comboBoxPersonNum->currentIndex()+2; //当前索引加2，为实际玩家数量
+    // 如果没有找到目标牌，或者剩下的牌不够发，直接返回
+    if (personNum*2 > m_allCards.size()) {
+        return;
+    }
+
+    //计算实际开始发牌的下标（目标牌的下三张）
+    int dealStartIndex = (targetIndex + 4) % m_allCards.size();
 
 
     //开始发牌存入各种变量
-    int personNum=ui->comboBoxPersonNum->currentIndex()+2; //当前索引加2，为实际玩家数量
+    int cardsDealt = 0;       // 记录已经发出了多少张牌
     switch(personNum)
     {
     case 2:
-        for(int i=0; i<2 && m_allCards.size()>1; i++)  //当前牌需要大于1才发
+        while (cardsDealt < personNum*2)
         {
-            m_player1Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-            m_player2Cards.push_back(m_allCards.back()); m_allCards.pop_back();
+            // 【核心公式】：(发牌起点 + 已经发了几张) % 牌的总数
+            // 这样 currentIdx 永远会在 0 到 m_allCards.size()-1 之间循环
+            int currentIdx = (dealStartIndex + cardsDealt) % m_allCards.size();
+
+            Card currentCard = m_allCards[currentIdx];
+
+            // 利用取余运算轮流给玩家发牌：0, 2, 4...给玩家1； 1, 3, 5...给玩家2
+            if (cardsDealt % 2 == 0) {
+                m_player1Cards.push_back(currentCard); // 玩家1
+            } else {
+                m_player2Cards.push_back(currentCard); // 玩家2
+            }
+
+            cardsDealt++; // 已发牌数加1
         }
 
         showCards(ui->groupBox_21, m_player1Cards);
@@ -113,11 +153,24 @@ void CardsScreen::Handledeal()
         break;
 
     case 3:
-        for(int i=0; i<2 && m_allCards.size()>2; i++)
+        while (cardsDealt < personNum*2)
         {
-            m_player1Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-            m_player2Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-            m_player3Cards.push_back(m_allCards.back()); m_allCards.pop_back();
+            int currentIdx = (dealStartIndex + cardsDealt) % m_allCards.size();
+
+            Card currentCard = m_allCards[currentIdx];
+
+            // 利用取余运算轮流给玩家发牌：0, 2, 4...给玩家1； 1, 3, 5...给玩家2
+            if (cardsDealt % 3 == 0) {
+                m_player1Cards.push_back(currentCard); // 玩家1
+            } else if(cardsDealt % 3 == 1)
+            {
+                m_player2Cards.push_back(currentCard); // 玩家2
+            } else if(cardsDealt % 3 ==2)
+            {
+                m_player3Cards.push_back(currentCard);
+            }
+
+            cardsDealt++; // 已发牌数加1
         }
         showCards(ui->groupBox_31, m_player1Cards);
         showCards(ui->groupBox_32, m_player2Cards);
@@ -125,12 +178,26 @@ void CardsScreen::Handledeal()
         break;
 
     case 4:
-        for(int i=0; i<2 && m_allCards.size()>3; i++)
+        while (cardsDealt < personNum*2)
         {
-            m_player1Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-            m_player2Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-            m_player3Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-            m_player4Cards.push_back(m_allCards.back()); m_allCards.pop_back();
+            int currentIdx = (dealStartIndex + cardsDealt) % m_allCards.size();
+
+            Card currentCard = m_allCards[currentIdx];
+
+            if (cardsDealt % 4 == 0) {
+                m_player1Cards.push_back(currentCard); // 玩家1
+            } else if(cardsDealt % 4 == 1)
+            {
+                m_player2Cards.push_back(currentCard); // 玩家2
+            } else if(cardsDealt % 4 ==2)
+            {
+                m_player3Cards.push_back(currentCard);
+            } else if(cardsDealt % 4 ==3)
+            {
+                m_player4Cards.push_back(currentCard);
+            }
+
+            cardsDealt++; // 已发牌数加1
         }
         showCards(ui->groupBox_41, m_player1Cards);
         showCards(ui->groupBox_42, m_player2Cards);
@@ -139,13 +206,29 @@ void CardsScreen::Handledeal()
         break;
 
     case 5:
-        for(int i=0; i<2 && m_allCards.size()>4; i++)
+        while (cardsDealt < personNum*2)
         {
-            m_player1Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-            m_player2Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-            m_player3Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-            m_player4Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-            m_player5Cards.push_back(m_allCards.back()); m_allCards.pop_back();
+            int currentIdx = (dealStartIndex + cardsDealt) % m_allCards.size();
+
+            Card currentCard = m_allCards[currentIdx];
+
+            if (cardsDealt % 5 == 0) {
+                m_player1Cards.push_back(currentCard); // 玩家1
+            } else if(cardsDealt % 5 == 1)
+            {
+                m_player2Cards.push_back(currentCard); // 玩家2
+            } else if(cardsDealt % 5 ==2)
+            {
+                m_player3Cards.push_back(currentCard);
+            } else if(cardsDealt % 5 ==3)
+            {
+                m_player4Cards.push_back(currentCard);
+            }else if(cardsDealt % 5 ==4)
+            {
+                m_player5Cards.push_back(currentCard);
+            }
+
+            cardsDealt++; // 已发牌数加1
         }
         showCards(ui->groupBox_51, m_player1Cards);
         showCards(ui->groupBox_52, m_player2Cards);
@@ -155,14 +238,32 @@ void CardsScreen::Handledeal()
         break;
 
     case 6:
-        for(int i=0; i<2 && m_allCards.size()>5; i++)
+        while (cardsDealt < personNum*2)
         {
-            m_player1Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-            m_player2Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-            m_player3Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-            m_player4Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-            m_player5Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-            m_player6Cards.push_back(m_allCards.back()); m_allCards.pop_back();
+            int currentIdx = (dealStartIndex + cardsDealt) % m_allCards.size();
+
+            Card currentCard = m_allCards[currentIdx];
+
+            if (cardsDealt % 6 == 0) {
+                m_player1Cards.push_back(currentCard); // 玩家1
+            } else if(cardsDealt % 6 == 1)
+            {
+                m_player2Cards.push_back(currentCard); // 玩家2
+            } else if(cardsDealt % 6 ==2)
+            {
+                m_player3Cards.push_back(currentCard);
+            } else if(cardsDealt % 6 ==3)
+            {
+                m_player4Cards.push_back(currentCard);
+            }else if(cardsDealt % 6 ==4)
+            {
+                m_player5Cards.push_back(currentCard);
+            }else if(cardsDealt % 6 ==5)
+            {
+                m_player6Cards.push_back(currentCard);
+            }
+
+            cardsDealt++; // 已发牌数加1
         }
         showCards(ui->groupBox_61, m_player1Cards);
         showCards(ui->groupBox_62, m_player2Cards);
@@ -236,6 +337,10 @@ void CardsScreen::showCards(QGroupBox *box, const std::vector<Card> &cards)
 {
     // 清空旧布局
     //delete box->layout();
+    if(cards.empty())
+    {
+        return;
+    }
 
     qDeleteAll(box->findChildren<QLabel*>());
     if (box->layout()) {
@@ -253,4 +358,5 @@ void CardsScreen::showCards(QGroupBox *box, const std::vector<Card> &cards)
         layout->addWidget(label);
     }
 }
+
 

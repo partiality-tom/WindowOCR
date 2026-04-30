@@ -27,7 +27,7 @@ public:
     void Automaticdealing(QStringList cards);  //识别到文字后自动发牌
     void Handledeal();  //发牌逻辑
 private slots:
-    void on_btn_dealCards_clicked();
+    void on_btn_dealCards_clicked(); //发牌槽函数
 
 
 private:

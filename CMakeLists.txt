@@ -13,7 +13,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(OpenCV_DIR "D:/opencv/build/x64/vc16/lib")
+set(OpenCV_DIR "D:/wc/My/OCR_ALL/opencv-4.10/opencv-4.10/opencv/build/x64/vc16/lib")
 
 find_package(OpenCV REQUIRED)
 
@@ -58,7 +58,7 @@ endif()
 
 
 
-set(PPOCR_LIB_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build/Desktop_Qt_5_15_2_MSVC2019_64bit-Release")
+set(PPOCR_LIB_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build/Qt_5_15_2_MSVC2019_64bit-Release")
 
 
 target_link_libraries(WindowOCR_Paddle PRIVATE Qt${QT_VERSION_MAJOR}::Widgets

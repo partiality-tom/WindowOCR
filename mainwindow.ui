@@ -34,7 +34,7 @@
       <item>
        <widget class="QPushButton" name="btn_dealCards">
         <property name="text">
-         <string>PushButton</string>
+         <string>发牌界面</string>
         </property>
        </widget>
       </item>
@@ -58,7 +58,7 @@
      <x>0</x>
      <y>0</y>
      <width>363</width>
-     <height>20</height>
+     <height>17</height>
     </rect>
    </property>
   </widget>

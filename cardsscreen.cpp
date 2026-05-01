@@ -4,12 +4,14 @@
 #include <QHBoxLayout>
 #include <QRandomGenerator>
 #include <QDebug>
+#include <QLayout>
 
 CardsScreen::CardsScreen(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::CardsScreen)
 {
     ui->setupUi(this);
+    this->setWindowTitle("发牌界面");
     connect(ui->comboBoxPersonNum,QOverload<int>::of(&QComboBox::currentIndexChanged),ui->stackedWidget,&QStackedWidget::setCurrentIndex);
 }
 
@@ -20,20 +22,15 @@ CardsScreen::~CardsScreen()
 
 void CardsScreen::on_btn_dealCards_clicked()
 {
+    try
+    {
+        Handledeal();
+    }
+    catch (const std::exception& e)
+    {
+        qDebug() << "发牌异常:" << e.what();
+    }
 
-/*
-    //createAllCards();   // 生成牌
-    //shuffleCards();     // 洗牌
-    dealCards();        // 发牌
-
-    // 显示到三个玩家区域（你要改成自己的 groupBox 名字）
-    showCards(ui->groupBox_41, m_player1Cards); // 地主
-    showCards(ui->groupBox_42, m_player2Cards); // 农民
-    showCards(ui->groupBox_43, m_player3Cards); // 农民
-    showCards(ui->groupBox_44, m_player4Cards);   // 底牌
-*/
-
-    Handledeal();
 
 }
 
@@ -45,7 +42,7 @@ void CardsScreen::Automaticdealing(QStringList cards)
     qDebug()<<"AAA:";
     //遍历牌识别到的牌，生成Card
     for (const QString& card : cards) {
-        qDebug()<<card;
+        //qDebug()<<card;
         m_allCards.push_back({card});
     }
 
@@ -53,25 +50,98 @@ void CardsScreen::Automaticdealing(QStringList cards)
     showCards(ui->AllCards, m_allCards);
 
     //Handledeal(); //发牌
-    //洗牌逻辑，忽略，可参考 shuffleCards();
-
-    //发牌逻辑，一个玩家顺序发三张(只做示例)
-    // for (int i=0; i<3; i++) {
-    //     m_player2Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-    //     m_player3Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-    //     m_player1Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-    // }
-
-    // showCards(ui->groupBox_11, m_player1Cards); // 地主
-    // showCards(ui->groupBox_12, m_player2Cards); // 农民
-    // showCards(ui->groupBox_13, m_player3Cards); // 农民
 
 }
 
 
 
-//测试到4人发牌没问题
-//     红A，黑A，黑2，黑3，黑4，黑5，黑6，黑7，黑8，黑9，黑10，黑K，黑Q，红2，红3，红4
+
+void CardsScreen::createAllCards()
+{
+    m_allCards.clear();
+    QStringList colors = {"Spade", "Heart", "Club", "Diamond"};
+    QStringList values = {"3","4","5","6","7","8","9","10","J","Q","K","A","2"};
+
+    // 生成普通牌
+    int weight = 1;
+    for (const QString& v : values) {
+        for (const QString& c : colors) {
+            m_allCards.push_back({c, v, weight});
+        }
+        weight++;
+    }
+
+    // 加入王
+    m_allCards.push_back({"JOKER-", "B", weight++}); // 小王
+    m_allCards.push_back({"JOKER-", "A", weight++}); // 大王
+}
+
+void CardsScreen::shuffleCards()
+{
+    std::shuffle(m_allCards.begin(), m_allCards.end(), *QRandomGenerator::global());
+}
+
+void CardsScreen::dealCards()
+{
+    // 清空
+    m_player1Cards.clear();
+    m_player2Cards.clear();
+    m_player3Cards.clear();
+    m_player4Cards.clear();
+    m_player5Cards.clear();
+    m_player6Cards.clear();
+
+
+
+
+    // 轮流发 17 轮，每人17张
+    for (int i=0; i<17; i++) {
+        m_player2Cards.push_back(m_allCards.back()); m_allCards.pop_back();
+        m_player3Cards.push_back(m_allCards.back()); m_allCards.pop_back();
+        m_player1Cards.push_back(m_allCards.back()); m_allCards.pop_back();
+    }
+
+    // 剩下3张底牌
+    // m_bottomCards.push_back(m_m_allCards[0]);
+    // m_bottomCards.push_back(m_m_allCards[1]);
+    // m_bottomCards.push_back(m_m_allCards[2]);
+
+    // 地主多拿3张（player1 = 地主）
+    // m_player1Cards.push_back(m_m_allCards[0]);
+    // m_player1Cards.push_back(m_m_allCards[1]);
+    // m_player1Cards.push_back(m_m_allCards[2]);
+}
+
+void CardsScreen::showCards(QGroupBox *box, const std::vector<Card> &cards)
+{
+    // 清空旧布局
+    //delete box->layout();
+    if(cards.empty())
+    {
+        return;
+    }
+
+    qDeleteAll(box->findChildren<QLabel*>());
+    if (box->layout()) {
+        delete box->layout();
+    }
+
+    QHBoxLayout* layout = new QHBoxLayout(box);
+    layout->setSpacing(0); // 重叠，目前没生效
+    layout->setAlignment(Qt::AlignCenter);
+    //layout->setAlignment(Qt::AlignCenter);
+    //layout->setContentsMargins(0,0,-10,0);
+
+    // 创建牌控件
+    for (const Card& card : cards) {
+        CardLabel* label = new CardLabel(card.color);
+        layout->addWidget(label);
+        // QResizeEvent event(label->size(), label->size());
+        // QApplication::sendEvent(label, &event);
+    }
+
+}
+
 void CardsScreen::Handledeal()
 {
 
@@ -79,12 +149,12 @@ void CardsScreen::Handledeal()
     QString targetCard;
     QString targetCardSuit=ui->comboBoxSuit->currentText();
     QString targetCardValue=ui->comboBoxValue->currentText();
+    targetCard=targetCardSuit+targetCardValue;
     if(targetCardValue=="小王" || targetCardValue=="大王")
     {
         targetCard=targetCardValue;
     }
-    targetCard=targetCardSuit+targetCardValue;
-    qDebug()<<"targetCard"<<targetCard;
+    qDebug()<<"参数牌:"<<targetCard;
 
 
     //清除之前的所有牌
@@ -100,20 +170,18 @@ void CardsScreen::Handledeal()
     for (int i = 0; i < m_allCards.size(); ++i) {
         if (m_allCards[i].color == targetCard) {
             targetIndex = i;
-            qDebug()<<"m_allCards"<<m_allCards[i].color;
+            qDebug()<<"找到的参数牌:"<<m_allCards[i].color;
             break; // 找到第一张匹配的就退出
         }
     }
     if(targetIndex==-1)
     {
-        qDebug()<<"没有目标牌";
+        qDebug()<<"没有参数牌";
         return;
     }
 
-    qDebug()<<"targetIndex:"<<targetIndex;
+    qDebug()<<"参数牌:"<<targetIndex;
 
-    //删除参数牌之前的牌，留下需要发的牌
-    m_allCards.erase(m_allCards.begin(), m_allCards.begin() + targetIndex); //erase删除不含尾
 
     int personNum=ui->comboBoxPersonNum->currentIndex()+2; //当前索引加2，为实际玩家数量
     // 如果没有找到目标牌，或者剩下的牌不够发，直接返回
@@ -123,7 +191,7 @@ void CardsScreen::Handledeal()
 
     //计算实际开始发牌的下标（目标牌的下三张）
     int dealStartIndex = (targetIndex + 4) % m_allCards.size();
-
+    qDebug()<<"开始发牌索引:"<<dealStartIndex;
 
     //开始发牌存入各种变量
     int cardsDealt = 0;       // 记录已经发出了多少张牌
@@ -277,86 +345,7 @@ void CardsScreen::Handledeal()
 
 }
 
-void CardsScreen::createAllCards()
-{
-    m_allCards.clear();
-    QStringList colors = {"Spade", "Heart", "Club", "Diamond"};
-    QStringList values = {"3","4","5","6","7","8","9","10","J","Q","K","A","2"};
 
-    // 生成普通牌
-    int weight = 1;
-    for (const QString& v : values) {
-        for (const QString& c : colors) {
-            m_allCards.push_back({c, v, weight});
-        }
-        weight++;
-    }
-
-    // 加入王
-    m_allCards.push_back({"JOKER-", "B", weight++}); // 小王
-    m_allCards.push_back({"JOKER-", "A", weight++}); // 大王
-}
-
-void CardsScreen::shuffleCards()
-{
-    std::shuffle(m_allCards.begin(), m_allCards.end(), *QRandomGenerator::global());
-}
-
-void CardsScreen::dealCards()
-{
-    // 清空
-    m_player1Cards.clear();
-    m_player2Cards.clear();
-    m_player3Cards.clear();
-    m_player4Cards.clear();
-    m_player5Cards.clear();
-    m_player6Cards.clear();
-
-
-
-
-    // 轮流发 17 轮，每人17张
-    for (int i=0; i<17; i++) {
-        m_player2Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-        m_player3Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-        m_player1Cards.push_back(m_allCards.back()); m_allCards.pop_back();
-    }
-
-    // 剩下3张底牌
-    // m_bottomCards.push_back(m_allCards[0]);
-    // m_bottomCards.push_back(m_allCards[1]);
-    // m_bottomCards.push_back(m_allCards[2]);
-
-    // 地主多拿3张（player1 = 地主）
-    // m_player1Cards.push_back(m_allCards[0]);
-    // m_player1Cards.push_back(m_allCards[1]);
-    // m_player1Cards.push_back(m_allCards[2]);
-}
-
-void CardsScreen::showCards(QGroupBox *box, const std::vector<Card> &cards)
-{
-    // 清空旧布局
-    //delete box->layout();
-    if(cards.empty())
-    {
-        return;
-    }
-
-    qDeleteAll(box->findChildren<QLabel*>());
-    if (box->layout()) {
-        delete box->layout();
-    }
-
-    QHBoxLayout* layout = new QHBoxLayout(box);
-    layout->setSpacing(-100); // 重叠，目前没生效
-    layout->setAlignment(Qt::AlignCenter);
-    layout->setContentsMargins(0,0,-10,0);
-
-    // 创建牌控件
-    for (const Card& card : cards) {
-        CardLabel* label = new CardLabel(card.color);
-        layout->addWidget(label);
-    }
-}
-
-
+//     红A，黑A，黑2，黑3，黑4，黑5，黑6，黑7，黑8，黑9，黑10，黑K，黑Q，红2，红3，红4
+//     红A，小王，黑2，黑3，黑4，黑5，黑6，黑7，黑8，黑9，黑10，黑K，黑Q，红2，红3，红4
+//     红A，小王，大王，黑3，黑4，黑5，黑6，黑7，黑8，黑9，黑10，黑K，黑Q，红2，红3，红4

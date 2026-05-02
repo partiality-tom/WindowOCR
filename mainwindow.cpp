@@ -179,7 +179,8 @@ void MainWindow::on_btn_dealCards_clicked()
             QString new_string=ui->textEdit->toPlainText();
             qDebug()<<"识别区最新文本:"<<new_string;
             new_string.remove('\n');
-            QStringList list = new_string.split("，", Qt::SkipEmptyParts);
+            //Qt::SkipEmptyParts：跳过分分隔符之间的空白字符串
+            QStringList list = new_string.split(QRegExp("[，, ]"), Qt::SkipEmptyParts);
             emit SendText(list);
         });
         connect(this,&MainWindow::SendText,m_CardsScreen,&CardsScreen::Automaticdealing);

@@ -39,18 +39,44 @@ void CardsScreen::Automaticdealing(QStringList cards)
 
 
     m_allCards.clear();
+    QRegularExpression cardRegex("^(梅|方|红|黑|广|大王|小王)(A|2|3|4|5|6|7|8|9|10|J|Q|K)?");
     qDebug()<<"AAA:";
-    //遍历牌识别到的牌，生成Card
-    for (const QString& card : cards) {
+    // 正常单张牌最长是3个字符（如“方10”、“梅10”），超过3个字符说明发生了粘连
+    for (const QString& currentCard : cards)
+    {
         //qDebug()<<card;
-        m_allCards.push_back({card});
+        if (currentCard.length() > 3)
+        {
+            QString tempStr = currentCard; // 创建一个临时字符串用来“切片”
+
+            while (!tempStr.isEmpty()) {
+                // 永远从 0 开始匹配剩下的字符串
+                QRegularExpressionMatch match = cardRegex.match(tempStr, 0);
+
+                if (match.hasMatch()) {
+                    QString singleCard = match.captured(0);
+                    qDebug() << "成功切分出单张牌:" << singleCard;
+                    m_allCards.push_back({singleCard});
+
+                    // 【核心操作】把已经匹配到的牌从字符串开头切掉，剩下的留给下一轮
+                    tempStr = tempStr.mid(match.capturedLength());
+                } else {
+                    // 如果开头匹配不上（比如遇到了干扰字符），直接切掉第一个字符
+                    qDebug() << "遇到干扰字符，跳过:" << tempStr.at(0);
+                    tempStr = tempStr.mid(1);
+                }
+            }
+        }
+        else
+        {
+
+            m_allCards.push_back({currentCard});
+        }
+
     }
 
     //识别到牌后显示
     showCards(ui->AllCards, m_allCards);
-
-    //Handledeal(); //发牌
-
 }
 
 
@@ -126,20 +152,86 @@ void CardsScreen::showCards(QGroupBox *box, const std::vector<Card> &cards)
         delete box->layout();
     }
 
-    QHBoxLayout* layout = new QHBoxLayout(box);
-    layout->setSpacing(0); // 重叠，目前没生效
-    layout->setAlignment(Qt::AlignCenter);
-    //layout->setAlignment(Qt::AlignCenter);
-    //layout->setContentsMargins(0,0,-10,0);
 
-    // 创建牌控件
-    for (const Card& card : cards) {
-        CardLabel* label = new CardLabel(card.color);
-        layout->addWidget(label);
-        // QResizeEvent event(label->size(), label->size());
-        // QApplication::sendEvent(label, &event);
+    //当前为识别牌展示区，分为两行展示
+    if(box->objectName() == "AllCards")
+    {
+
+        // 创建主布局（垂直布局，包含两行）
+        QVBoxLayout* mainLayout = new QVBoxLayout(box);
+        mainLayout->setSpacing(0);  // 两行之间的间距
+        mainLayout->setAlignment(Qt::AlignCenter);
+
+        // 计算每行应该放多少张牌（最多28张）
+        int cardsPerRow = 28;
+        int totalCards = cards.size();
+        int firstRowCount = qMin(cardsPerRow, totalCards);
+        int secondRowCount = totalCards - firstRowCount;
+
+        // 创建第一行布局
+        if (firstRowCount > 0) {
+            QHBoxLayout* firstRowLayout = new QHBoxLayout();
+            firstRowLayout->setSpacing(0);  // 牌之间的间距
+            firstRowLayout->setAlignment(Qt::AlignCenter);
+
+            // 添加第一行的牌
+            for (int i = 0; i < firstRowCount; ++i) {
+                CardLabel* label = new CardLabel(cards[i].color);
+                firstRowLayout->addWidget(label);
+            }
+
+            mainLayout->addLayout(firstRowLayout);
+        }
+
+        // 创建第二行布局
+        if (secondRowCount > 0) {
+            QHBoxLayout* secondRowLayout = new QHBoxLayout();
+            secondRowLayout->setSpacing(0);
+            secondRowLayout->setAlignment(Qt::AlignCenter);
+
+            // 添加第二行的牌
+            for (int i = firstRowCount; i < totalCards; ++i) {
+                CardLabel* label = new CardLabel(cards[i].color);
+                secondRowLayout->addWidget(label);
+            }
+
+            mainLayout->addLayout(secondRowLayout);
+        }
+
+        // 激活布局
+        mainLayout->activate();
+        box->updateGeometry();
+        box->update();
+    }
+    else
+    {
+        QHBoxLayout* layout = new QHBoxLayout(box);
+        layout->setSpacing(2); // 重叠，目前没生效
+        layout->setAlignment(Qt::AlignCenter);
+        //layout->setAlignment(Qt::AlignCenter);
+        layout->setContentsMargins(0,0,0,0);
+
+        // 创建牌控件
+        for (const Card& card : cards) {
+            CardLabel* label = new CardLabel(card.color);
+            layout->addWidget(label);
+        }
+        // 激活布局
+        layout->activate();
+        box->updateGeometry();
+        box->update();
+    }
+}
+
+int CardsScreen::getCardValue(const QString &cardName)
+{
+    if (CARD_VALUE_MAP.contains(cardName)) {
+        return CARD_VALUE_MAP.value(cardName);
     }
 
+    // 如果没找到对应的牌，可以根据业务需求返回 -1 或抛出异常
+    qDebug() << "警告：未找到对应的牌面映射 ->" << cardName;
+    return -1;
 }
 
 void CardsScreen::Handledeal()
@@ -149,8 +241,11 @@ void CardsScreen::Handledeal()
     QString targetCard;
     QString targetCardSuit=ui->comboBoxSuit->currentText();
     QString targetCardValue=ui->comboBoxValue->currentText();
+    int SkippNum=getCardValue(targetCardValue);
+    qDebug()<<"跳牌数值:"<<SkippNum;
+
     targetCard=targetCardSuit+targetCardValue;
-    if(targetCardValue=="小王" || targetCardValue=="大王")
+    if(targetCardValue=="小王" || targetCardValue=="大王" || targetCardValue=="广")
     {
         targetCard=targetCardValue;
     }
@@ -189,8 +284,8 @@ void CardsScreen::Handledeal()
         return;
     }
 
-    //计算实际开始发牌的下标（目标牌的下三张）
-    int dealStartIndex = (targetIndex + 4) % m_allCards.size();
+    //计算实际开始发牌的下标
+    int dealStartIndex = (targetIndex + SkippNum) % m_allCards.size();
     qDebug()<<"开始发牌索引:"<<dealStartIndex;
 
     //开始发牌存入各种变量

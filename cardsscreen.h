@@ -2,6 +2,7 @@
 #define CARDSSCREEN_H
 
 #include <QGroupBox>
+#include <QMap>
 #include <QWidget>
 
 // 一张牌的结构
@@ -11,6 +12,17 @@ struct Card {
     int weight;     // 权值（用于排序），目前没使用到
 };
 
+static const QMap<QString, int> CARD_VALUE_MAP = {
+    {"A", 1},
+    {"2", 2}, {"3", 3}, {"4", 4}, {"5", 5},
+    {"6", 6}, {"7", 7}, {"8", 8}, {"9", 9}, {"10", 10},
+    {"J", 11},
+    {"Q", 12},
+    {"K", 13},
+    {"小王", 14},
+    {"大王", 15},
+    {"广", 16}
+};
 
 namespace Ui {
 class CardsScreen;
@@ -47,6 +59,7 @@ private:
     void shuffleCards(); //洗牌
     void dealCards();   //发牌
     void showCards(QGroupBox* box, const std::vector<Card>& cards); //显示一组牌
+    int getCardValue(const QString &cardName);  //获取映射表的跳牌数值
 };
 
 #endif // CARDSSCREEN_H

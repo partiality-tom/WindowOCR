@@ -20,8 +20,8 @@ CardLabel::CardLabel(QString card, QWidget *parent)
 
 
     // 加载你的素材图片
-    // 例：":/cards/card_14_1.png" 黑桃A
-    QString path = QString("./Playingcards/%1").arg(card);
+    // 例：":/cards/card_14_1.png" 黑桃A 广
+    QString path = QString("./Playingcards/%1.gif").arg(card);
     m_Pixmap=QPixmap(path);
     setPixmap(m_Pixmap.scaled(size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
     this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);

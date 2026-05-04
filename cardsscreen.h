@@ -42,6 +42,8 @@ private slots:
     void on_btn_dealCards_clicked(); //发牌槽函数
 
 
+    void on_btn_Reset_clicked();
+
 private:
     Ui::CardsScreen *ui;
 
@@ -60,6 +62,8 @@ private:
     void dealCards();   //发牌
     void showCards(QGroupBox* box, const std::vector<Card>& cards); //显示一组牌
     int getCardValue(const QString &cardName);  //获取映射表的跳牌数值
+    bool isAllDigits(const QString &str); //判断一个字符串是否全部为数字
+    void deleteCards(QString objectName ); //根据对象名，删除QGroupBox 里面所有的label
 };
 
 #endif // CARDSSCREEN_H

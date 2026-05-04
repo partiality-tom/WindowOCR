@@ -20,7 +20,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     SetConsoleOutputCP(65001);
 
-    setWindowTitle("投屏实时文字识别");
+    setWindowTitle("实时文字识别");
+
+    ui->stop->setCheckable(true);
 
     // 初始化OCR
 
@@ -49,17 +51,16 @@ MainWindow::MainWindow(QWidget *parent)
         {
             {
                 QReadLocker locker(&m_lock);
-                while (!m_isRunning && !m_threadExit) {
+                while (!m_isRunning && !m_threadExit)
+                {
 
                     m_condition.wait(&m_lock);
-                }
-
-                if (m_threadExit)
-                {
-                    break;
-                }
+                } 
             }
-
+            if (m_threadExit)
+            {
+                break;
+            }
 
             QPixmap cropPix = QApplication::primaryScreen()->grabWindow(0,
                                                                         selectRect.x(),selectRect.y(),selectRect.width(),selectRect.height());
@@ -108,9 +109,6 @@ MainWindow::MainWindow(QWidget *parent)
             QMetaObject::invokeMethod(ui->textEdit, "setText", Qt::QueuedConnection, Q_ARG(QString, resultList.join("\n")));
         }
 
-
-
-
     });
 
 }
@@ -152,20 +150,11 @@ void MainWindow::onAreaSelected(QRect rect)
 
     w->hide(); //半透明选择窗口隐藏
 
-    QWriteLocker locker(&m_lock);
-    m_isRunning=true;
-    m_condition.wakeOne();
+    // QWriteLocker locker(&m_lock);
+    // m_isRunning=true;
+    // m_condition.wakeOne();
 
 
-}
-
-
-
-void MainWindow::on_stop_clicked()
-{
-    QWriteLocker lock(&m_lock);
-    m_isRunning=false;
-    lock.unlock();
 }
 
 
@@ -189,4 +178,23 @@ void MainWindow::on_btn_dealCards_clicked()
 }
 
 
+
+
+void MainWindow::on_stop_toggled(bool checked)
+{
+    qDebug()<<"checked:"<<checked;
+    if(checked)
+    {
+        ui->stop->setText("停止识别");
+        QWriteLocker lock(&m_lock);
+        m_isRunning=true;
+        m_condition.wakeOne();
+    }
+    else
+    {
+        ui->stop->setText("开始识别");
+        QWriteLocker lock(&m_lock);
+        m_isRunning=false;
+    }
+}
 

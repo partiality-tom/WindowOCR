@@ -26,9 +26,8 @@ private slots:
     void startSelectArea();  //识别区域选择
     void onAreaSelected(QRect rect);
 
-    void on_stop_clicked();
     void on_btn_dealCards_clicked();
-
+    void on_stop_toggled(bool checked);
 
 signals:
     void ResultText(QString text);

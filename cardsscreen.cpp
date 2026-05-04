@@ -13,6 +13,7 @@ CardsScreen::CardsScreen(QWidget *parent)
     ui->setupUi(this);
     this->setWindowTitle("发牌界面");
     connect(ui->comboBoxPersonNum,QOverload<int>::of(&QComboBox::currentIndexChanged),ui->stackedWidget,&QStackedWidget::setCurrentIndex);
+
 }
 
 CardsScreen::~CardsScreen()
@@ -44,7 +45,7 @@ void CardsScreen::Automaticdealing(QStringList cards)
     // 正常单张牌最长是3个字符（如“方10”、“梅10”），超过3个字符说明发生了粘连
     for (const QString& currentCard : cards)
     {
-        //qDebug()<<card;
+        qDebug()<<currentCard;
         if (currentCard.length() > 3)
         {
             QString tempStr = currentCard; // 创建一个临时字符串用来“切片”
@@ -67,9 +68,13 @@ void CardsScreen::Automaticdealing(QStringList cards)
                 }
             }
         }
+        else if(isAllDigits(currentCard))
+        {
+            qDebug()<<"当前字符全部为数字，跳过："<<currentCard;
+            continue;
+        }
         else
         {
-
             m_allCards.push_back({currentCard});
         }
 
@@ -232,6 +237,39 @@ int CardsScreen::getCardValue(const QString &cardName)
     // 如果没找到对应的牌，可以根据业务需求返回 -1 或抛出异常
     qDebug() << "警告：未找到对应的牌面映射 ->" << cardName;
     return -1;
+}
+
+bool CardsScreen::isAllDigits(const QString &str)
+{
+    if (str.isEmpty()) return false;
+    for (const QChar &c : str)
+    {
+        if (!c.isDigit())
+        { // 或者使用: if (c < '0' || c > '9')
+            return false;
+        }
+    }
+    return true;
+}
+
+void CardsScreen::deleteCards(QString objectName)
+{
+    QWidget *currentPage = ui->stackedWidget->currentWidget();
+    if (!currentPage) return;
+
+    QGroupBox *groupBox = currentPage->findChild<QGroupBox*>(objectName);
+
+    if (groupBox)
+    {
+        // 3. 获取 QGroupBox 内的所有直接子控件
+        QList<QWidget*> children = groupBox->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
+
+        // 4. 遍历并使用 deleteLater() 安全删除
+        for (QWidget *child : children)
+        {
+            child->deleteLater();
+        }
+    }
 }
 
 void CardsScreen::Handledeal()
@@ -444,3 +482,43 @@ void CardsScreen::Handledeal()
 //     红A，黑A，黑2，黑3，黑4，黑5，黑6，黑7，黑8，黑9，黑10，黑K，黑Q，红2，红3，红4
 //     红A，小王，黑2，黑3，黑4，黑5，黑6，黑7，黑8，黑9，黑10，黑K，黑Q，红2，红3，红4
 //     红A，小王，大王，黑3，黑4，黑5，黑6，黑7，黑8，黑9，黑10，黑K，黑Q，红2，红3，红4
+
+void CardsScreen::on_btn_Reset_clicked()
+{
+    int index=ui->stackedWidget->currentIndex(); //获取当前页索引
+    switch(index)
+    {
+    case 0:  //2人
+        qDebug()<<"重置2人游戏牌";
+        deleteCards("groupBox_21");
+        deleteCards("groupBox_22");
+        break;
+    case 1: //3人
+        deleteCards("groupBox_31");
+        deleteCards("groupBox_32");
+        deleteCards("groupBox_33");
+        break;
+    case 2: //4人
+        deleteCards("groupBox_41");
+        deleteCards("groupBox_42");
+        deleteCards("groupBox_43");
+        deleteCards("groupBox_44");
+        break;
+    case 3: //5人
+        deleteCards("groupBox_51");
+        deleteCards("groupBox_52");
+        deleteCards("groupBox_53");
+        deleteCards("groupBox_54");
+        deleteCards("groupBox_55");
+        break;
+    case 4: //6人
+        deleteCards("groupBox_61");
+        deleteCards("groupBox_62");
+        deleteCards("groupBox_63");
+        deleteCards("groupBox_64");
+        deleteCards("groupBox_65");
+        deleteCards("groupBox_66");
+        break;
+    }
+}
+

@@ -27,7 +27,7 @@
       <item>
        <widget class="QPushButton" name="stop">
         <property name="text">
-         <string>停止识别</string>
+         <string>开始识别</string>
         </property>
        </widget>
       </item>
@@ -43,7 +43,7 @@
     <item>
      <widget class="QLabel" name="label">
       <property name="text">
-       <string>TextLabel</string>
+       <string>未选择识别区域</string>
       </property>
      </widget>
     </item>
